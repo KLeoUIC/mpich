@@ -60,13 +60,24 @@ def scanChapter(chapPath) -> None:
 def generateDescription(funcMap, subMap) -> None:
     outPath = path.join(getcwd(), "doc/mansrc/maint/ai_prompt/workingPrompt.txt")
     for func in funcMap:
-            with open("doc/mansrc/maint/"+func+"_Extracted.txt", "w+") as out:
-                for sec in funcMap[func]:
-                    out.write(subMap[sec])
-            start = time.perf_counter()
-            subprocess.call("opencode --model 'argo/claudeopus45' run $(sed 's/FUNCTION/"+func+"/g' "+outPath+")", shell=True)
-            print(time.perf_counter()-start)
-            remove("doc/mansrc/maint/"+func+"_Extracted.txt")
+        with open("doc/mansrc/maint/"+func+"_Extracted.txt", "w+") as out:
+            for sec in funcMap[func]:
+                out.write(subMap[sec])
+        start = time.perf_counter()
+        subprocess.call("opencode --model 'argo/gemini35flash' run $(sed 's/FUNCTION/"+func+"/g' "+outPath+")", shell=True)
+        print(time.perf_counter()-start)
+        remove("doc/mansrc/maint/"+func+"_Extracted.txt")
+
+def getMPIX():
+    src = path.join(getcwd(), "src/binding/c")
+    for entry in scandir(src):
+        if re.compile("(.*)_api.txt").match(entry.name): 
+            with open(path.join(src, entry)) as sect:
+                for line in sect:
+                    func = re.compile("(MPIX_.*):").match(line)
+                    if func: 
+                        mpixPrompt = path.join(getcwd(), "doc/mansrc/maint/ai_prompt/mpixPrompt.txt")
+                        subprocess.call("opencode --model 'argo/claudeopus45' run $(sed 's/FUNCTION/"+func[1]+"/g' "+mpixPrompt+")", shell=True)
 
 def main():
     # Scan whole latex folder for chapters, get un-rendered version and scan
@@ -78,6 +89,7 @@ def main():
                 if namePattern.match(file.name):
                     chapterPath = path.join(rootPath, entry.name+"/"+file.name)
                     scanChapter(chapterPath)
+    getMPIX()
                 
 if __name__ == "__main__":
     main()
