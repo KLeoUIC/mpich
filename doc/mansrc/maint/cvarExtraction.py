@@ -6,8 +6,7 @@ import subprocess
 from os import path
 from os import scandir
 from os import getcwd
-from os import remove
-import time
+import random
 
 cvarsMap = {}
 
@@ -24,16 +23,16 @@ def scanForCvar(folder:str):
                     else:
                         cvarsMap[m[1]] = set()
                         cvarsMap[m[1]].add(folder+"/"+entry.name)
-                        print(m[1])
             search.close()
 
 def main():
     srcPath = path.join(getcwd(), "src")
     scanForCvar(srcPath)
-    for entry in cvarsMap:
-        readyString = "opencode --model 'argo/claudeopus45' run 'Read only through the following files"
+    sample = random.sample(list(cvarsMap), 5)
+    for entry in sample:
+        readyString = "opencode --model 'argo/gpt55' run 'Read only through the following files"
         for file in cvarsMap[entry]: readyString += ", "+file
-        readyString += " with focus on "+entry+". Use the reading to inform a description of when "+entry+" is used and what "+entry+" enables/sets. After that a list of valid values and what they enable. Output, with existing formatting used on MPIR_CVAR_EXAMPLE, to 'doc/wiki/cvar.md', reread and remove redundant information.'" 
+        readyString += " with focus on "+entry+". Use the reading to deterine if "+entry+" is an alternate name for another CVAR, if it is add 'Alternate name: "+entry+"' above the other CVARs function list, do not change anything else. If it is not an alternate name use the reading to inform a description of when "+entry+" is used, including if it relies on values of other CVARs or modes being active. What "+entry+" enables/sets -do not mention individual valid values here. After that then a list of valid values and what they enable or represent. Output, with existing formatting used on MPIR_CVAR_EXAMPLE, to 'doc/wiki/cvar.md', do not change remove MPIR_CVAR_EXAMPLE.'" 
         subprocess.call(readyString, shell = True)
                 
 if __name__ == "__main__":
