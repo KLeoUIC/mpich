@@ -13,6 +13,7 @@ from os import scandir
 from os import getcwd
 from os import remove
 import time
+import argparse
 
 chapterPattern = re.compile("chap-")
 subsectionPattern = re.compile("(\\\label\{subsec:)|(\\\label\{sec:)")
@@ -22,7 +23,7 @@ excludeStart = re.compile("(begin\{implementors\})|(begin\{table\})|(begin\{exam
 excludeEnd = re.compile("(end\{implementors\})|(end\{table\})|(end\{example\})")
 oneLineExclude = re.compile("(\\\mpitermtitleindex\{)|(\%\%)|(\\\label\{)|(\\\subsection\{)|(\\\section\{)")
 
-def scanChapter(chapPath) -> None:
+def scanChapter(chapPath, funcs, model, doc) -> None:
     with open(chapPath, "r") as chap: 
         subsectionHeader = ""
         subMap = {} # map name of sub/sections onto their content
@@ -39,7 +40,8 @@ def scanChapter(chapPath) -> None:
                     nextLineFunc = True
                 else:
                     nextLineFunc = False
-                    funcMap[function[1]] = []
+                    if (function[1] in funcs) | (funcs == None):
+                        funcMap[function[1]] = []
             elif excludeStart.search(line) != None: omitting = True
             elif excludeEnd.search(line) != None: omitting = False
             elif sub != None:
@@ -55,31 +57,52 @@ def scanChapter(chapPath) -> None:
             for subsection in subMap:
                 if funcName.search(subMap[subsection]) != None:
                     funcMap[func].append(subsection)
-        generateDescription(funcMap, subMap)
+        generateDescription(funcMap, subMap, model, doc)
         
-def generateDescription(funcMap, subMap) -> None:
+def generateDescription(funcMap, subMap, model, doc) -> None:
     outPath = path.join(getcwd(), "doc/mansrc/maint/ai_prompt/workingPrompt.txt")
     for func in funcMap:
         with open("doc/mansrc/maint/"+func+"_Extracted.txt", "w+") as out:
             for sec in funcMap[func]:
                 out.write(subMap[sec])
-        start = time.perf_counter()
-        subprocess.call("opencode --model 'argo/gemini35flash' run $(sed 's/FUNCTION/"+func+"/g' "+outPath+")", shell=True)
-        print(time.perf_counter()-start)
+        if doc != None:
+            start = time.perf_counter()
+            subprocess.call("opencode --model 'argo/"+model+"' --format json > 'doc/mansrc/"+doc+"_"+model+"_"+func+".txt' run $(sed 's/FUNCTION/"+func+"/g' "+outPath+")", shell=True)
+            end = time.perf_counter()-start
+            with open(path.join(getcwd(), "doc/mansrc/maint/docdoc.csv"), "a") as out:
+                out.write("\n"+model+","+func+","+str(end))
+        else:
+            subprocess.call("opencode --model 'argo/"+model+"' run $(sed 's/FUNCTION/"+func+"/g' "+outPath+")", shell=True)
         remove("doc/mansrc/maint/"+func+"_Extracted.txt")
 
-def getMPIX():
+def getMPIX(funcs, model, doc):
     src = path.join(getcwd(), "src/binding/c")
     for entry in scandir(src):
         if re.compile("(.*)_api.txt").match(entry.name): 
             with open(path.join(src, entry)) as sect:
                 for line in sect:
                     func = re.compile("(MPIX_.*):").match(line)
-                    if func: 
+                    if func and ((func[1] in funcs)|(funcs==None)): 
                         mpixPrompt = path.join(getcwd(), "doc/mansrc/maint/ai_prompt/mpixPrompt.txt")
-                        subprocess.call("opencode --model 'argo/claudeopus45' run $(sed 's/FUNCTION/"+func[1]+"/g' "+mpixPrompt+")", shell=True)
+                        if doc != None:
+                            start = time.perf_counter()
+                            subprocess.call("opencode --model 'argo/"+model+"' --format json > 'doc/mansrc/"+doc+"_"+model+"_"+func+".txt' run $(sed 's/FUNCTION/"+func[1]+"/g' "+mpixPrompt+")", shell=True)
+                            end = time.perf_counter()-start
+                            with open(path.join(getcwd(), "doc/mansrc/maint/docdoc.csv"), "a") as out:
+                                out.write("\n"+doc+","+model+","+func+","+str(end))
+                        else:
+                            subprocess.call("opencode --model 'argo/"+model+"' run $(sed 's/FUNCTION/"+func[1]+"/g' "+mpixPrompt+")", shell=True)
 
 def main():
+    parser = argparse.ArgumentParser(prog='Argo semantic description generator', description='-m Model name\n-f function names\n-d Name for documentation')
+    parser.add_argument('-m', default='claudeopus45', type=str)
+    parser.add_argument('-f', nargs='*', type=str)
+    parser.add_argument('-d', type=str)
+    argv = parser.parse_args()
+    model = argv.m
+    funcs = set()
+    for elm in argv.f: funcs.add(elm)
+
     # Scan whole latex folder for chapters, get un-rendered version and scan
     rootPath = path.join(getcwd(), "doc/mansrc/maint/mpi-standard")
     for entry in scandir(rootPath):
@@ -88,8 +111,8 @@ def main():
                 namePattern = re.compile("("+entry.name[5:]+"(-2)*.tex)|(prof.tex)|(mpit.tex)")
                 if namePattern.match(file.name):
                     chapterPath = path.join(rootPath, entry.name+"/"+file.name)
-                    scanChapter(chapterPath)
-    getMPIX()
+                    scanChapter(chapterPath, funcs, model, argv.d)
+    # getMPIX(funcs, model, argv.d)
                 
 if __name__ == "__main__":
     main()

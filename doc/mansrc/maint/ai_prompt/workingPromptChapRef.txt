@@ -1,4 +1,4 @@
-Read through all of 'doc/mansrc/maint/FUNCTION_Extracted.txt' and convert it to a concise documentation style semantic description for FUNCTION. The following is a list of traits of complex functions;
+Read through sections pretaining to FUNCTION in 'CHAP' and convert it to a concise documentation style semantic description for FUNCTION. The following is a list of traits of complex functions;
 - uses more than one communicator
 - involves more than one process
 - is more than a parameter checker and wrapper for the underlying MPID function
