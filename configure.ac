@@ -102,7 +102,7 @@ m4_include([maint/version.m4])
 dnl 2nd arg is intentionally underquoted
 AC_INIT([MPICH],
         MPICH_VERSION_m4,
-        [discuss@mpich.org],
+        [discuss@lists.mpich.org],
         [mpich],
         [http://www.mpich.org/])
 
@@ -675,7 +675,8 @@ AC_PROG_CC
 
 # Modern autoconf aggressively probe gnu std support and will append (e.g.) -std=gnu23 to $CC
 # Since $CC will be used in mpicc and we don't want to force the gnu behavior on to user, let's strip it.
-CC=$(echo "$CC" | sed 's/ -std=[^ ]*//g')
+# NOTE: brackets are autoconf quotes, thus requires quote protection.
+CC=$(echo "$CC" | sed 's/ -std=[[^ ]]*//g')
 
 AM_PROG_CC_C_O dnl needed for automake "silent-rules"
 PAC_PUSH_FLAG([CFLAGS])
@@ -1411,16 +1412,6 @@ if test "$with_cross" != "no" ; then
     fi
 fi
 
-# This goes here because we need the top_srcdir
-if test "$enable_romio" = "yes" ; then
-    AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
-
-    m4_define([romio_embedded_dir], [src/mpi/romio])
-    PAC_CONFIG_ROMIO
-fi
-AC_SUBST(ROMIO_VERSION)
-
-AM_CONDITIONAL([BUILD_ROMIO], [test x$enable_romio = xyes])
 #
 # FIXME: If an external device, don't necessarily complain (e.g.,
 # if the device is already built)
@@ -1569,24 +1560,22 @@ fi
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
 
-# Legacy ROMIO tests run before the configured installation prefix is
-# populated.  Use the primary process manager built in this tree instead of
-# the future $(bindir)/mpiexec path.
+# export TEST_MPIEXEC so subdirs (ROMIO) can run pre-install tests
 case "$pm_name" in
   hydra)
-    ROMIO_TEST_MPIEXEC="${main_top_builddir}/src/pm/hydra/mpiexec.hydra"
+    TEST_MPIEXEC="${main_top_builddir}/src/pm/hydra/mpiexec.hydra"
     ;;
   gforker)
-    ROMIO_TEST_MPIEXEC="${main_top_builddir}/src/pm/gforker/mpiexec"
+    TEST_MPIEXEC="${main_top_builddir}/src/pm/gforker/mpiexec"
     ;;
   remshell)
-    ROMIO_TEST_MPIEXEC="${main_top_builddir}/src/pm/remshell/mpiexec"
+    TEST_MPIEXEC="${main_top_builddir}/src/pm/remshell/mpiexec"
     ;;
   *)
-    ROMIO_TEST_MPIEXEC=""
+    TEST_MPIEXEC=
     ;;
 esac
-AC_SUBST(ROMIO_TEST_MPIEXEC)
+export TEST_MPIEXEC
 
 dnl
 dnl gforker and remshell does not use separate configure. 
@@ -1687,6 +1676,17 @@ fi
 if test "$enable_pmix" = "yes"; then
     AC_DEFINE([ENABLE_PMIX], 1, [Define to enable PMIX protocol])
 fi
+
+# -----------------------------------
+if test "$enable_romio" = "yes" ; then
+    AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
+
+    m4_define([romio_embedded_dir], [src/mpi/romio])
+    PAC_CONFIG_ROMIO
+fi
+AC_SUBST(ROMIO_VERSION)
+
+AM_CONDITIONAL([BUILD_ROMIO], [test x$enable_romio = xyes])
 
 # ---------------------------------------------------------------------------
 # Check for whether the compiler defines a symbol that contains the
@@ -3744,7 +3744,7 @@ AM_CONDITIONAL([INSTALL_DOCS],[test "X$enable_doc" = "Xyes"])
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
 # stddef.h is sometimes needed for types like wchar_t
-AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h string.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h assert.h sys/param.h)
+AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h string.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h assert.h sys/param.h poll.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
         #include <sys/types.h>

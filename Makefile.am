@@ -17,9 +17,7 @@ nodist_noinst_HEADERS =
 BUILT_SOURCES =
 bin_PROGRAMS =
 bin_SCRIPTS =
-dist_noinst_SCRIPTS = autogen.sh
 noinst_DATA =
-dist_noinst_DATA =
 noinst_HEADERS =
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
@@ -29,7 +27,6 @@ CLEANFILES =
 DISTCLEANFILES =
 MAINTAINERCLEANFILES =
 SUFFIXES = 
-EXTRA_DIST =
 DOC_SUBDIRS =
 MANDOC_SUBDIRS =
 HTMLDOC_SUBDIRS =
@@ -54,9 +51,6 @@ external_subdirs = @mpl_srcdir@ @hwloc_srcdir@ @json_srcdir@ @yaksa_srcdir@ @pmi
 external_ldflags = @RPATHS@
 external_libs = @WRAPPER_LIBS@
 
-ROMIO_TEST_MPIEXEC = @ROMIO_TEST_MPIEXEC@
-export ROMIO_TEST_MPIEXEC
-
 # convenience libs that do not depend on MPI
 pmpi_convenience_libs = @mpl_lib@ @hwloc_lib@ @json_lib@ @yaksa_lib@ @pmi_lib@
 
@@ -72,15 +66,6 @@ if BUILD_ABI_LIB
 endif
 endif
 
-# NOTE on our semi-unconventional usage of DIST_SUBDIRS:
-# The automake manual recommends thinking of DIST_SUBDIRS as the list of all
-# *configured* subdirectories.  The normal autotools model involves
-# unconditional configure steps for all/most directories with conditional make
-# steps (i.e., conditional inclusion in SUBDIRS).  But in the MPICH case we
-# almost always configure exactly the directories that will be included in
-# SUBDIRS.  So most additions to DIST_SUBDIRS should be conditional on the same
-# condition as the corresponding SUBDIRS addition.
-DIST_SUBDIRS = ${external_subdirs}
 SUBDIRS = ${external_subdirs}
 
 lib_lib@MPILIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -136,7 +121,6 @@ mpifort_convenience_libs = @mpl_lib@
 lib_LTLIBRARIES =
 
 # include our subdir automake fragments
-include maint/Makefile.mk
 include src/Makefile.mk
 
 if BUILD_PROFILING_LIB
@@ -218,15 +202,6 @@ endif BUILD_CXX_BINDING
 
 # build the current directory and then the examples directory after everything else
 SUBDIRS += . examples
-DIST_SUBDIRS += . examples test
-
-EXTRA_DIST += README CHANGES COPYRIGHT README.envvar
-
-# README.vin is tricky, we don't actually distribute it when we use release.pl,
-# but we do need to distribute it in order for ./autogen.sh to work
-# correctly on a distribution tarball.  For now we distribute it when we "make
-# dist".
-EXTRA_DIST += README.vin
 
 testing:
 	( cd test && $(MAKE) $(AM_MAKEFLAGS) testing )

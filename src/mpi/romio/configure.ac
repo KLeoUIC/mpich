@@ -13,7 +13,7 @@ m4_include([version.m4])
 dnl 2nd arg is intentionally underquoted
 AC_INIT([ROMIO],
         MPICH_VERSION_m4,
-        [discuss@mpich.org],
+        [discuss@lists.mpich.org],
         [romio],
         [http://www.mpich.org/])
 
@@ -1238,7 +1238,7 @@ elif test $FROM_MPICH = yes ; then
    MPI_H_INCLUDE="-I${main_top_builddir}/src/include -I${main_top_srcdir}/src/include"
    ROMIO_INCLUDE=""
    USER_CFLAGS=""
-   MPIRUN=""
+   MPIRUN="$TEST_MPIEXEC"
    #
    # Turn off the building of the Fortran interface and the Info routines
    EXTRA_DIRS=""
