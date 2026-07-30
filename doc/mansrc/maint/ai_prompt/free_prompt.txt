@@ -1,0 +1,2 @@
+Read through all of 'doc/mansrc/maint/FUNCTION_Extracted.txt' and convert it to a concise documentation style semantic description for FUNCTION. 
+Write a short summary sentence. Include in the description information focusing on what users programs. Output description to 'doc/mansrc/semantics.adoc' in Asciidoc format, with first usage of FUNCTION bolded, parameters monospaced, bracketed by '//tag::FUNCTION[]' and '//end::FUNCTION[]'
