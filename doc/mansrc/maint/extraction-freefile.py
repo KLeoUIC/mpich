@@ -23,7 +23,13 @@ def gatherFromApi() -> set:
     return funcMap
 
 def generateDescription(func, model, doc) -> None:
-    prompt = "Read through sections pretaining to "+func+" in 'src' and convert it to a concise documentation style semantic description for "+func+". The following is a list of traits of complex functions;\n- uses more than one communicator\n- involves more than one process\n- is more than a parameter checker and wrapper for the underlying MPID function\n- has threading/concurrency behavior\n- is collective\n- is nonlocal" \
+    if doc == "freefilewiki":
+        prompt = "Read through sections pretaining to "+func+" in 'src' and "+func+" section in 'doc/mansrc/funcnotes.txt'. If more context is needed look to 'doc/wiki'. Convert it to a concise documentation style semantic description for "+func+"."
+    elif doc == "freeall":
+        prompt = "Read through sections pretaining to "+func+" in 'src', "+func+" section in 'doc/mansrc/funcnotes.txt', and 'doc/mansrc/maint/mpi-standard'. If more context is needed look to 'doc/wiki'. Convert it to a concise documentation style semantic description for "+func+"."
+    else:
+        prompt = "Read through sections pretaining to "+func+" in 'src' and convert it to a concise documentation style semantic description for "+func+"."
+    prompt += " The following is a list of traits of complex functions;\n- uses more than one communicator\n- involves more than one process\n- is more than a parameter checker and wrapper for the underlying MPID function\n- has threading/concurrency behavior\n- is collective\n- is nonlocal" \
     "If "+func+" has 0-2 traits get a <=6 sentence description, 3-4 traits a <=8 sentence description, and 5-6 traits a <=10 sentence description. During any of the following description do not; explain the parameters or their ranges, give the function signature, explain MPI_SUCESS return, extrapolate or interpret resources to complete checklist items, nor use run-on sentences.\nWrite a short summary sentence. On a new line write the following checklist items as one paragraph while continuing to follow the above rules and sentence limits. Only include list items if they are stated in the reference file if not exclude them silently." \
     "- when the function returns\n- wildcard, MPI constants, or values that cause errors\n- thread/concurrency\n- overtaking/non-overtaking\n- collective behavior\n- advice to users for building their own programs, do not use opinionated language such as 'prefer' or 'should' instead use 'may' or 'are recommended'\nOutput description to 'doc/mansrc/semantics.adoc' in Asciidoc format, with first usage of "+func+" bolded, parameters monospaced, bracketed by '//tag::"+func+"[]' and '//end::"+func+"[]'"
 
